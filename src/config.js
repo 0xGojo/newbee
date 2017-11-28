@@ -1,5 +1,5 @@
 config = {
-    gasPrice: 5000000000,
+    gasPrice: 10000000000,
     gasLimit: 200000,
     network: {
         mainnet: {

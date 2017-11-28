@@ -3,6 +3,16 @@ const Tx            =   require('ethereumjs-tx');
 const utils         =   require('ethereumjs-util');
 const CronJob       =   require('cron').CronJob;
 const config        =   require('./config');
+const fs            =   require('fs');
+const util          =   require('util');
+
+var log_file = fs.createWriteStream(__dirname + '/debug.log', {flags : 'a'});
+var log_stdout = process.stdout;
+
+console.log = function(d) { //
+    log_file.write(util.format(d) + '\n');
+    log_stdout.write(util.format(d) + '\n');
+};
 
 function web3() {
     return new Web3(new Web3.providers.HttpProvider(config.network.testnet.url));
@@ -78,17 +88,18 @@ function cronJob(wallet){
             try{
                 var balance = getBalance(wallet.address).then(function (data) {
                     _balance = web3().fromWei(data.toNumber(), 'ether');
-                    console.log('balance',_balance, new Date());
+                    console.log('[INFO]: '+ new Date() +' balance '+ _balance);
                     if(_balance > config.target) {
                         sendETH(wallet.address, wallet.privateKey, config.receiverAddress, 0.1).then(function (txHash) {
-                            console.log('transaction hash', txHash);
+                            console.log('[HASH]: '+ new Date() +' transaction hash '+ txHash);
                         });
                     } else {
-                        console.log('not enough balance');
+                        console.log('[WARN]: '+ new Date() +' balance < 0.1');
                     }
                 });
             } catch(e){
-                throw new Error(e);
+                console.log('[ERRO]: ' + new Date()+' '+ e.message.toString());
+                // throw new Error(e);
             }
 
         },
