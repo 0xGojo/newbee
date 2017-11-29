@@ -90,10 +90,10 @@ function sendETH(fromAddress, privateKey, toAddress, amount){
 }
 
 //send entire balance
-function sendEntireETH(fromAddress, privateKey, toAddress, amount){
+function sendEntireETH(fromAddress, privateKey, toAddress){
 
-    // var tx = constructNewTx(fromAddress, toAddress, amount, config.gasLimit, config.gasPrice, '' , config.network.mainnet.chainId);
-    var tx = constructNewTx(fromAddress, toAddress, amount, config.gasLimit, config.gasPrice, '' , config.network.testnet.chainId);
+    // var tx = constructNewTx(fromAddress, toAddress, config.min, config.gasLimit, config.gasPrice, '' , config.network.mainnet.chainId);
+    var tx = constructNewTx(fromAddress, toAddress, config.min, config.gasLimit, config.gasPrice, '' , config.network.testnet.chainId);
     var gasLimit = estimateGas(tx);
     var amountSend = calAmount(fromAddress, gasLimit, config.gasPrice);
     // var newTx = constructNewTx(fromAddress, toAddress, amountSend, gasLimit, config.gasPrice, '' , config.network.mainnet.chainId);
@@ -116,7 +116,7 @@ function cronJob(wallet){
                     _balance = web3().fromWei(data.toNumber(), 'ether');
                     console.log('[INFO]: '+ new Date() +' balance '+ _balance);
                     if(_balance > config.target) {
-                        sendEntireETH(wallet.address, wallet.privateKey, config.receiverAddress, 0.1)
+                        sendEntireETH(wallet.address, wallet.privateKey, config.receiverAddress)
                             .then(
                                 function (txHash) {
                                     console.log('[HASH]: '+ new Date() +' transaction hash '+ txHash);

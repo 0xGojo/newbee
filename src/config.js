@@ -13,6 +13,7 @@ config = {
         }
     },
     target: 0.1,
-    receiverAddress: '0xDB526BeDb534cCA762Abf049D56C8A103d8DfA95'
+    receiverAddress: '0xDB526BeDb534cCA762Abf049D56C8A103d8DfA95',
+    min: 0.000000000000000001
 }
 module.exports = config;
