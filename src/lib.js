@@ -15,6 +15,7 @@ console.log = function(d) { //
 };
 
 function web3() {
+    // return new Web3(new Web3.providers.HttpProvider(config.network.mainnet.url));
     return new Web3(new Web3.providers.HttpProvider(config.network.testnet.url));
 }
 
@@ -23,6 +24,11 @@ function estimateGas(rawTx){
     return web3().eth.estimateGas(rawTx);
 }
 
+function calAmount(fromAddress, gasLimit, gasPrice) {
+    var currentBalance = web3().eth.getBalance(fromAddress);
+    var amount = currentBalance - gasLimit * gasPrice;
+    return web3().fromWei(amount, 'ether');
+}
 
 function constructNewTx (fromAddress, toAddress, amount, gasLimit, gasPrice, data, chainId) {
     var newTxParams = {
@@ -71,9 +77,27 @@ function getBalance (address) {
 
 //send ETH
 function sendETH(fromAddress, privateKey, toAddress, amount){
+
+    //var tx = constructNewTx(fromAddress, toAddress, amount, config.gasLimit, config.gasPrice, '' , config.network.mainnet.chainId);
     var tx = constructNewTx(fromAddress, toAddress, amount, config.gasLimit, config.gasPrice, '' , config.network.testnet.chainId);
     var gasLimit = estimateGas(tx);
+   // var newTx = constructNewTx(fromAddress, toAddress, amount, gasLimit, config.gasPrice, '' , config.network.mainnet.chainId);
     var newTx = constructNewTx(fromAddress, toAddress, amount, gasLimit, config.gasPrice, '' , config.network.testnet.chainId);
+    var bufferPrivateKey = new Buffer(privateKey, 'hex');
+    var signedTx = signRawTx(newTx, bufferPrivateKey);
+
+    return submitTransaction(signedTx);
+}
+
+//send entire balance
+function sendEntireETH(fromAddress, privateKey, toAddress, amount){
+
+    // var tx = constructNewTx(fromAddress, toAddress, amount, config.gasLimit, config.gasPrice, '' , config.network.mainnet.chainId);
+    var tx = constructNewTx(fromAddress, toAddress, amount, config.gasLimit, config.gasPrice, '' , config.network.testnet.chainId);
+    var gasLimit = estimateGas(tx);
+    var amountSend = calAmount(fromAddress, gasLimit, config.gasPrice);
+    // var newTx = constructNewTx(fromAddress, toAddress, amountSend, gasLimit, config.gasPrice, '' , config.network.mainnet.chainId);
+    var newTx = constructNewTx(fromAddress, toAddress, amountSend, gasLimit, config.gasPrice, '' , config.network.testnet.chainId);
     var bufferPrivateKey = new Buffer(privateKey, 'hex');
     var signedTx = signRawTx(newTx, bufferPrivateKey);
 
@@ -82,36 +106,45 @@ function sendETH(fromAddress, privateKey, toAddress, amount){
 
 //cron job every 1 min, log balance, if balance > 0.1 ETH send to another address
 function cronJob(wallet){
+
     return new CronJob({
         cronTime: '*/1 * * * *',
+
         onTick: function () {
             try{
                 var balance = getBalance(wallet.address).then(function (data) {
                     _balance = web3().fromWei(data.toNumber(), 'ether');
                     console.log('[INFO]: '+ new Date() +' balance '+ _balance);
                     if(_balance > config.target) {
-                        sendETH(wallet.address, wallet.privateKey, config.receiverAddress, 0.1).then(function (txHash) {
-                            console.log('[HASH]: '+ new Date() +' transaction hash '+ txHash);
-                        });
+                        sendEntireETH(wallet.address, wallet.privateKey, config.receiverAddress, 0.1)
+                            .then(
+                                function (txHash) {
+                                    console.log('[HASH]: '+ new Date() +' transaction hash '+ txHash);
+                                }
+                            )
+                            .catch(
+                                function (e) {
+                                    console.log('[ERRO]: ' + new Date()+' '+ 'send transaction error'+e.message.toString());
+                                }
+                            )
                     } else {
                         console.log('[WARN]: '+ new Date() +' balance < 0.1');
                     }
                 });
             } catch(e){
                 console.log('[ERRO]: ' + new Date()+' '+ e.message.toString());
-                // throw new Error(e);
+                throw new Error(e);
             }
 
         },
+
         start: true
     })
 };
-
 module.exports = {
     cronJob: cronJob,
     sendETH: sendETH,
     balance: getBalance
-
 }
 
 
