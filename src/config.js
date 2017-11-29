@@ -4,7 +4,7 @@ config = {
     network: {
         mainnet: {
             chainId: 1,
-            url: ''
+            url: 'https://api.myetherapi.com/eth'
         },
 
         testnet: {
@@ -14,6 +14,6 @@ config = {
     },
     target: 0.1,
     receiverAddress: '0xDB526BeDb534cCA762Abf049D56C8A103d8DfA95',
-    min: 0.000000000000000001
+    min: 0.000000000000000001 // 1 wei
 }
 module.exports = config;
